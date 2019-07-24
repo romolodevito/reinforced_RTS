@@ -296,7 +296,7 @@ def D_reward(data, threshold):
     D_priority_array = []
     
     for i in range(0, len(data)):
-        if data.iloc[i]['current_failures'] > 0 or data.iloc[i]['time'] < threshold:
+        if data.iloc[i]['current_failures'] > 0 or data.iloc[i]['time'] <= threshold:
             priority = 1.0
         elif data.iloc[i]['current_failures'] == 0 or data.iloc[i]['time'] > threshold:
             priority = 0.0
@@ -517,8 +517,8 @@ if __name__ == '__main__':
     args = sys.argv[0]
     
     #leggo il dataset con i dati delle esecuzioni
-    data = pd.read_csv('commons_lang_result.csv', header = 0)
-    #data = pd.read_csv('commons_lang_result.csv', header = 0, nrows = 100)
+    #data = pd.read_csv('commons_lang_result.csv', header = 0)
+    data = pd.read_csv('commons_lang_result.csv', header = 0, nrows = 100)
     data = data.rename(index=str, columns={"A_priority":"A" , "A_priority_with_time":"A_WITH_TIME", "B_priority":"B", "B_priority_with_time":"B_WITH_TIME", "C_priority":"C", "C_priority_with_time":"C_WITH_TIME", "D_priority":"D" })
     #print(data)
     labels = data[['cycle_id',REWARD_SELECTOR]]
@@ -545,6 +545,7 @@ if __name__ == '__main__':
     output_data = pd.DataFrame()
     prediction_time = []
     learning_time = []
+    median = 0.0
     
     for commit_id in commit_id_list:
         print(commit_id)
@@ -590,8 +591,12 @@ if __name__ == '__main__':
             data_subset = data_subset.sort_values(by = 'priority', ascending = False)
             #print(data_subset.iloc[:, -5:])
             #attribuisco la reward
-            data_subset = reward(REWARD_SELECTOR, data_subset, TIME_THRESHOLD)
+            data_subset = reward(REWARD_SELECTOR, data_subset, median)
             #print(data_subset) #-DECOMMENT
+            print('MEDIAN JUST USED')
+            print(median)
+            #print(data_subset['time'])
+            #print(data_subset['reward'])
             
             ####################################################################################################################################################
             #VALUTAZIONE DELLE PRESTAZIONI
@@ -662,7 +667,7 @@ if __name__ == '__main__':
             ####################################################################################################################################################
             
             #elimino dal dataset le colonne relative ai fallimenti correnti e al tempo corrente
-            data_subset = data_subset.drop(['current_failures', 'time', 'priority_p', 'priority'], axis = 'columns')
+            data_subset = data_subset.drop(['current_failures', 'priority_p', 'priority'], axis = 'columns')
             #print(data_subset)
             #salvo l'esperienza in memoria utilizzando la classe 'experience_replay' 
             for i in range(0,len(data_subset)):
@@ -680,7 +685,7 @@ if __name__ == '__main__':
             data_subset = first_cycle_reward(REWARD_SELECTOR, data_subset)
             #print(data_subset) #-DECOMMENT
             #elimino dal dataset le colonne relative ai fallimenti correnti e al tempo corrente
-            data_subset = data_subset.drop(['current_failures', 'time', 'priority'], axis = 'columns')
+            data_subset = data_subset.drop(['current_failures', 'priority'], axis = 'columns')
             #salvo l'esperienza in memoria utilizzando la classe 'experience_replay' 
             for i in range(0,len(data_subset)):
                 mem.remember(list(data_subset.iloc[i]))
@@ -688,29 +693,37 @@ if __name__ == '__main__':
         
         #vado a campionare un batch di esperienza che sarà utilizzato per  addestrare la rete
         #print('\nGET_BATCH\n')
-        batch = mem.get_batch(BATCH_SIZE)
+        batch = mem.get_batch(BATCH_SIZE) 
         #print(batch)
         batch_dataset = pd.DataFrame(batch, columns = data_subset.columns)
-        #print(batch_dataset)
+        #calcolo la mediana del ciclo corrente, verrà utilizzata nel ciclo successivo per calcolare la reward
+        median = batch_dataset['time'].median()
+        print('MEDIAN JUST CALCULATED')
+        print(median)
+        #print(batch_dataset.iloc[:,:10])
     
         #Addestro il modello di learning e prendo il tempo di learning
         learning_start = time.time()
-        agent.model_fitting(batch_dataset.drop(['test_class_name', 'cycle_id'], axis = 'columns').iloc[:, :-1], batch_dataset.drop(['test_class_name', 'cycle_id'], axis = 'columns').iloc[:,-1])
+        agent.model_fitting(batch_dataset.drop(['test_class_name', 'cycle_id', 'time'], axis = 'columns').iloc[:, :-1], batch_dataset.drop(['test_class_name', 'cycle_id', 'time'], axis = 'columns').iloc[:,-1])
         learning_end = time.time()
         print('LEARNING TIME')
         print(learning_end - learning_start)
         learning_time.append(learning_end - learning_start)
         #setto il flag in modo tale da non rieseguire la parte relativa al primo ciclio di CI
         agent.already_fitted_model = True
-    
+   
     print('SUMMARY GENERATED')
     #print(output_data)
     #dataset di uscita
     output_data.insert(len(output_data.columns), 'prediction_time', prediction_time, allow_duplicates = True)
     output_data.insert(len(output_data.columns), 'learning_time', learning_time[1:], allow_duplicates = True)
-    output_data.to_csv('summary/' + str(args) + '-summary.csv', index = False)
-
-
+    #output_data.to_csv('summary/' + str(args) + '-summary.csv', index = False)
+    
+    if not os.path.isfile('summary/commons_lang_summary1.csv'):
+        output_data.to_csv('summary/commons_lang_summary1.csv', index = False, header = True)
+    else: # else it exists so append without writing the header
+        output_data.to_csv('summary/commons_lang_summary1.csv',index = False, mode = 'a', header = False)
+    
  
  
     #for i in range(0, len(data)):

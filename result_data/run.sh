@@ -1,5 +1,5 @@
 #!/bin/bash
-for i in `seq 1 30`;
+for i in `seq 1 5`;
 do
-    python3 rrts.py ${i}
+    python3 rrts.py
 done    
