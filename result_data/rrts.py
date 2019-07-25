@@ -517,7 +517,7 @@ if __name__ == '__main__':
     args = sys.argv[0]
     
     #leggo il dataset con i dati delle esecuzioni
-    data = pd.read_csv('commons_imaging_result.csv', header = 0)
+    data = pd.read_csv('commons_math_result.csv', header = 0)
     #data = pd.read_csv('commons_compress_result.csv', header = 0, nrows = 100)
     data = data.rename(index=str, columns={"A_priority":"A" , "A_priority_with_time":"A_WITH_TIME", "B_priority":"B", "B_priority_with_time":"B_WITH_TIME", "C_priority":"C", "C_priority_with_time":"C_WITH_TIME", "D_priority":"D" })
     #print(data)
@@ -565,8 +565,8 @@ if __name__ == '__main__':
             prediction_time.append(prediction_end - prediction_start)
             #print(action)
             #creo dataframe con le probabilità delle azioni
-            action_p = pd.DataFrame(action_p, columns = agent.model.classes_ )
-            #print(action_p)
+            action_p = pd.DataFrame(action_p, columns = agent.model.classes_)
+            #print(agent.model.classes_)
             
             #gestione della priorità
             priority_p_array = []
@@ -654,12 +654,6 @@ if __name__ == '__main__':
             print(estimated_fpa)
             
             
-             #ESTIMATED FAILURE PERCENTILE ACCURACY (FPA) AFTER RANKING PER 0.25%, 0.5% E 0.75%
-            #fpa_25 = FPA_generator(evaluation.head(int(len(data_subset)/4)))
-            #fpa_50 = FPA_generator(evaluation.head(int((len(data_subset)/4)*2)))
-            #fpa_75 = FPA_generator(evaluation.head(int((len(data_subset)/4)*3)))
-            
-            
             #metriche per ciclo
             #output_data_temp = pd.DataFrame({"cycle_id":[commit_id], "#_testsuite":[len(data_subset)], "NORMALIZED_FPA":[estimated_fpa / optimal_fpa], "accuracy":[score], "total_failures_in_cycle":[evaluation['failures'].sum()], "failures_in_0.25%_ordered":[evaluation['failures'].head(int(len(data_subset)/4)).sum()], "exec_time_0.25%":[evaluation['time'].head(int(len(data_subset)/4)).sum()], "NORMALIZED_FPA_0.25%":[fpa_25 / optimal_fpa],  "failures_in_0.50%_ordered":[evaluation['failures'].head(int((len(data_subset)/4)*2)).sum()], "exec_time_0.50%":[evaluation['time'].head(int((len(data_subset)/4)*2)).sum()], "NORMALIZED_FPA_0.50%":[fpa_50 / optimal_fpa],"failures_in_0.75%_ordered":[evaluation['failures'].head(int((len(data_subset)/4)*3)).sum()], "exec_time_0.75%":[evaluation['time'].head(int((len(data_subset)/4)*3)).sum()], "NORMALIZED_FPA_0.75%":[fpa_75 / optimal_fpa]})
             output_data_temp = pd.DataFrame({"cycle_id":[commit_id], "#_testsuite":[len(data_subset)], "NORMALIZED_FPA":[estimated_fpa / optimal_fpa], "accuracy":[score], "total_failures_in_cycle":[evaluation['failures'].sum()], "exec_time":[evaluation['time'].sum()], "optimal_failures_25%":[optimal_failures_25], "failures_in_25%_ordered":[evaluation['failures'].head(int(len(data_subset)/4)).sum()], "optimal_exec_time_25%":[optimal_exec_time_25], "exec_time_25%":[evaluation['time'].head(int(len(data_subset)/4)).sum()], "optimal_failures_50%":[optimal_failures_50], "failures_in_50%_ordered":[evaluation['failures'].head(int((len(data_subset)/4)*2)).sum()], "optimal_exec_time_50%":[optimal_exec_time_50],"exec_time_50%":[evaluation['time'].head(int((len(data_subset)/4)*2)).sum()], "optimal_failures_75%":[optimal_failures_75], "failures_in_75%_ordered":[evaluation['failures'].head(int((len(data_subset)/4)*3)).sum()], "optimal_exec_time_75%":[optimal_exec_time_75], "exec_time_75%":[evaluation['time'].head(int((len(data_subset)/4)*3)).sum()]})
@@ -719,10 +713,10 @@ if __name__ == '__main__':
     output_data.insert(len(output_data.columns), 'learning_time', learning_time[1:], allow_duplicates = True)
     #output_data.to_csv('summary/' + str(args) + '-summary.csv', index = False)
     
-    if not os.path.isfile('experiments/commons_imaging_summary.csv'):
-        output_data.to_csv('experiments/commons_imaging_summary.csv', index = False, header = True)
+    if not os.path.isfile('experiments/commons_math_summary.csv'):
+        output_data.to_csv('experiments/commons_math_summary.csv', index = False, header = True)
     else: # else it exists so append without writing the header
-        output_data.to_csv('experiments/commons_imaging_summary.csv',index = False, mode = 'a', header = False)
+        output_data.to_csv('experiments/commons_math_summary.csv',index = False, mode = 'a', header = False)
     
  
  
