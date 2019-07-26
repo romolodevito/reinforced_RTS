@@ -26,7 +26,7 @@ except:
 HIDDEN_LAYER_SIZES = 12
 #REWARD_SELECTOR è utilizzato per selezionare la tipologia di reward desiderata, le scelte sono:
 # A, A_WITH_TIME, B, B_WITH_TIME, C, C_WITH_TIME, D
-REWARD_SELECTOR = 'D'
+REWARD_SELECTOR = 'A_WITH_TIME'
 #soglia temporale 
 TIME_THRESHOLD = 0.006999999999999999
 #dimensione della memoria utilizzata per il salvataggio dell'esperienza
@@ -592,7 +592,7 @@ if __name__ == '__main__':
             #print(data_subset.iloc[:, -5:])
             #attribuisco la reward
             data_subset = reward(REWARD_SELECTOR, data_subset, median)
-            #print(data_subset) #-DECOMMENT
+            #print(data_subset.iloc[:, -5:]) #-DECOMMENT
             print('MEDIAN JUST USED')
             print(median)
             #print(data_subset['time'])
@@ -620,9 +620,6 @@ if __name__ == '__main__':
             #ordino sul tempo e sulla classe
             evaluation = evaluation.sort_values(by = ['class', 'time'], ascending = [False, True])
             #print(evaluation)
-            #ordino sulla classe
-            #evaluation = evaluation.sort_values(by = 'class', ascending = False)
-            #print(evaluation)
             #inserisco la colonna RANKING
             rank = [i for i in range(len(evaluation), 0, -1)]
             evaluation.insert(len(evaluation.columns),'ranking', rank, allow_duplicates = True)
@@ -641,11 +638,8 @@ if __name__ == '__main__':
             optimal_failures_75 = evaluation['failures'].head(int((len(data_subset)/4)*3)).sum()
             
             
-            #ordino su priority_p
+            #ordino su priority_p e priority
             evaluation = evaluation.sort_values(by = ['priority', 'priority_p'], ascending = [False, False])
-            #print(evaluation)
-            #ordino su priority
-            #evaluation = evaluation.sort_values(by = 'priority', ascending = False)
             #print(evaluation)
             
             #ESTIMATED FAILURE PERCENTILE ACCURACY (FPA) AFTER RANKING 
@@ -655,7 +649,6 @@ if __name__ == '__main__':
             
             
             #metriche per ciclo
-            #output_data_temp = pd.DataFrame({"cycle_id":[commit_id], "#_testsuite":[len(data_subset)], "NORMALIZED_FPA":[estimated_fpa / optimal_fpa], "accuracy":[score], "total_failures_in_cycle":[evaluation['failures'].sum()], "failures_in_0.25%_ordered":[evaluation['failures'].head(int(len(data_subset)/4)).sum()], "exec_time_0.25%":[evaluation['time'].head(int(len(data_subset)/4)).sum()], "NORMALIZED_FPA_0.25%":[fpa_25 / optimal_fpa],  "failures_in_0.50%_ordered":[evaluation['failures'].head(int((len(data_subset)/4)*2)).sum()], "exec_time_0.50%":[evaluation['time'].head(int((len(data_subset)/4)*2)).sum()], "NORMALIZED_FPA_0.50%":[fpa_50 / optimal_fpa],"failures_in_0.75%_ordered":[evaluation['failures'].head(int((len(data_subset)/4)*3)).sum()], "exec_time_0.75%":[evaluation['time'].head(int((len(data_subset)/4)*3)).sum()], "NORMALIZED_FPA_0.75%":[fpa_75 / optimal_fpa]})
             output_data_temp = pd.DataFrame({"cycle_id":[commit_id], "num_testsuite":[len(data_subset)], "NORMALIZED_FPA":[estimated_fpa / optimal_fpa], "accuracy":[score], "total_failures_in_cycle":[evaluation['failures'].sum()], "exec_time":[evaluation['time'].sum()], "optimal_failures_25%":[optimal_failures_25], "failures_in_25%_ordered":[evaluation['failures'].head(int(len(data_subset)/4)).sum()], "optimal_exec_time_25%":[optimal_exec_time_25], "exec_time_25%":[evaluation['time'].head(int(len(data_subset)/4)).sum()], "optimal_failures_50%":[optimal_failures_50], "failures_in_50%_ordered":[evaluation['failures'].head(int((len(data_subset)/4)*2)).sum()], "optimal_exec_time_50%":[optimal_exec_time_50],"exec_time_50%":[evaluation['time'].head(int((len(data_subset)/4)*2)).sum()], "optimal_failures_75%":[optimal_failures_75], "failures_in_75%_ordered":[evaluation['failures'].head(int((len(data_subset)/4)*3)).sum()], "optimal_exec_time_75%":[optimal_exec_time_75], "exec_time_75%":[evaluation['time'].head(int((len(data_subset)/4)*3)).sum()]})
             output_data = output_data.append(output_data_temp)
             ####################################################################################################################################################
@@ -713,10 +706,10 @@ if __name__ == '__main__':
     output_data.insert(len(output_data.columns), 'learning_time', learning_time[1:], allow_duplicates = True)
     #output_data.to_csv('summary/' + str(args) + '-summary.csv', index = False)
     
-    if not os.path.isfile('experiments/commons_compress_injected_summary.csv'):
-        output_data.to_csv('experiments/commons_compress_injected_summary.csv', index = False, header = True)
+    if not os.path.isfile('experiments_A_time/commons_compress_injected_summary.csv'):
+        output_data.to_csv('experiments_A_time/commons_compress_injected_summary.csv', index = False, header = True)
     else: # else it exists so append without writing the header
-        output_data.to_csv('experiments/commons_compress_injected_summary.csv',index = False, mode = 'a', header = False)
+        output_data.to_csv('experiments_A_time/commons_compress_injected_summary.csv',index = False, mode = 'a', header = False)
     
  
  

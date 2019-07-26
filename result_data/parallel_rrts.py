@@ -1,4 +1,5 @@
-from sklearn.datasets import load_boston 
+from multiprocessing.dummy import Pool as ThreadPool 
+from functools import partial
 from sklearn.model_selection import train_test_split
 import xml.etree.cElementTree as ET
 #import understand
@@ -21,7 +22,8 @@ try:
 except:
 	import pickle
 
-
+#numero di modelli di learning
+NUMBER_OF_MODELS = 3
 #dimensione dell'i-esimo layer della rete, aumentando la lista delle dimensioni (e.g. 32,16,8,...) è possibile istanziare una rete con più layer
 HIDDEN_LAYER_SIZES = 12
 #REWARD_SELECTOR è utilizzato per selezionare la tipologia di reward desiderata, le scelte sono:
@@ -84,19 +86,33 @@ class experience_replay(object):
         
 ##################### AGENT START #####################        
 class DQN_agent(object):
-    def __init__(self, hidden_size, activation, warm_start, solver):
+    def __init__(self, hidden_size, activation, warm_start, solver, number_of_models):
         self.hidden_size = hidden_size
         self.activation = activation
         self.warm_start = warm_start
         self.solver = solver
+        self.number_of_models = number_of_models
         self.already_fitted_model = False
         #self.experience = experience_replay(max_memory=500)
         self.model = self.build_model()
         
-    def build_model(self):
-        model = neural_network.MLPClassifier(hidden_layer_sizes=self.hidden_size, activation=self.activation, warm_start=self.warm_start, solver=self.solver, max_iter=1500)
+    #def build_model(self):
+    #    model = neural_network.MLPClassifier(hidden_layer_sizes=self.hidden_size, activation=self.activation, warm_start=self.warm_start, solver=self.solver, max_iter=1500)
         
-        return model
+    #    return model
+    
+    def build_model(self):
+        
+        if self.number_of_models > 1 :
+            model_list = []
+            for i in range(0, self.number_of_models):
+                model_list.append(neural_network.MLPClassifier(hidden_layer_sizes=self.hidden_size, activation=self.activation, warm_start=self.warm_start, solver=self.solver, max_iter=1500))
+            return model_list
+        elif self.number_of_models == 1:
+            model = neural_network.MLPClassifier(hidden_layer_sizes=self.hidden_size, activation=self.activation, warm_start=self.warm_start, solver=self.solver, max_iter=1500)
+            return model
+        else:
+            print('WRONG NUMBER OF MODEL')
     
     def model_fitting(self, Xtrain, Ytrain):
         self.model.fit(Xtrain, Ytrain)
@@ -510,7 +526,24 @@ def FPA_generator(evaluation):
         #print(ranking_sum)
         fpa = fpa + ranking_sum
     return(fpa / len(evaluation))
+########################################################################    
+
+
+def learning(Xtrain, Ytrain, model):
+    #print(model)
+    print(os.getpid())
+    model.fit(Xtrain, Ytrain)
+    print('TRAINED')
+    #return('ciao')
     
+    
+def prediction(Xtest, model):
+    #print(model)
+    action = model.predict(Xtest)
+    action_p = model.predict_proba(Xtest)
+    print('PREDICTED')
+    return(action, action_p)
+
 
 
 if __name__ == '__main__':
@@ -528,7 +561,7 @@ if __name__ == '__main__':
     
     
     #istanziazione agente
-    agent = DQN_agent(HIDDEN_LAYER_SIZES, 'relu', False, 'adam')
+    agent = DQN_agent(HIDDEN_LAYER_SIZES, 'relu', False, 'adam', NUMBER_OF_MODELS)
     
     #istanziazione memoria utilizzata per il salvataggio dell'esperienza
     mem = experience_replay(MEMORY_SIZE)
@@ -558,14 +591,29 @@ if __name__ == '__main__':
             #la priorità viene attribuita utilizzando la rete
             #prendo il tempo della predizione
             prediction_start = time.time()
-            (action, action_p) = agent.get_action(data_subset.drop(['test_class_name', 'cycle_id', 'current_failures', 'time'], axis = 'columns'))
+            
+            
+            if NUMBER_OF_MODELS > 1:
+                prediction_with_param = partial(prediction, data_subset.drop(['test_class_name', 'cycle_id', 'current_failures', 'time'], axis = 'columns'))
+                prediction_pool = ThreadPool(NUMBER_OF_MODELS)
+                result = prediction_pool.map(prediction_with_param, agent.model) 
+                print(result)
+                #print(action_p)
+                # close the pool and wait for the work to finish 
+                prediction_pool.close() 
+                prediction_pool.join()
+            elif NUMBER_OF_MODELS == 1:
+                (action, action_p) = agent.get_action(data_subset.drop(['test_class_name', 'cycle_id', 'current_failures', 'time'], axis = 'columns'))
+            else:
+                print('WRONG NUMBER OF MODEL')
+            
             prediction_end = time.time()
             print('PREDICTION TIME')
             print(prediction_end - prediction_start)
             prediction_time.append(prediction_end - prediction_start)
             #print(action)
             #creo dataframe con le probabilità delle azioni
-            action_p = pd.DataFrame(action_p, columns = agent.model.classes_)
+            action_p = pd.DataFrame(action_p, columns = agent.model[0].classes_)
             #print(agent.model.classes_)
             
             #gestione della priorità
@@ -584,11 +632,9 @@ if __name__ == '__main__':
             #appendo la colonna delle classi (priority)
             data_subset.insert(len(data_subset.columns),'priority', action, allow_duplicates = True)
             #print(data_subset.iloc[:, -5:])
-            #ordino in maniera decrescente in base alla colonna priority_p
-            data_subset = data_subset.sort_values(by = 'priority_p', ascending = False)
-            #print(data_subset.iloc[:, -5:])
-            #ordino in maniera decrescente in base alla colonna priority
-            data_subset = data_subset.sort_values(by = 'priority', ascending = False)
+            #ordino in maniera decrescente in base alla colonna priority_p e priority
+            data_subset = data_subset.sort_values(by = ['priority', 'priority_p'], ascending = [False, False])
+            #data_subset = data_subset.sort_values(by = 'priority_p', ascending = False)
             #print(data_subset.iloc[:, -5:])
             #attribuisco la reward
             data_subset = reward(REWARD_SELECTOR, data_subset, median)
@@ -691,7 +737,20 @@ if __name__ == '__main__':
     
         #Addestro il modello di learning e prendo il tempo di learning
         learning_start = time.time()
-        agent.model_fitting(batch_dataset.drop(['test_class_name', 'cycle_id', 'time'], axis = 'columns').iloc[:, :-1], batch_dataset.drop(['test_class_name', 'cycle_id', 'time'], axis = 'columns').iloc[:,-1])
+        
+        if NUMBER_OF_MODELS > 1:
+            learning_with_param = partial(learning, batch_dataset.drop(['test_class_name', 'cycle_id', 'time'], axis = 'columns').iloc[:, :-1], batch_dataset.drop(['test_class_name', 'cycle_id', 'time'], axis = 'columns').iloc[:,-1])
+            learning_pool = ThreadPool(NUMBER_OF_MODELS)
+            results = learning_pool.map(learning_with_param, agent.model) 
+            #print(results)
+            # close the pool and wait for the work to finish 
+            learning_pool.close() 
+            learning_pool.join()
+        elif NUMBER_OF_MODELS == 1:
+            agent.model_fitting(batch_dataset.drop(['test_class_name', 'cycle_id', 'time'], axis = 'columns').iloc[:, :-1], batch_dataset.drop(['test_class_name', 'cycle_id', 'time'], axis = 'columns').iloc[:,-1])
+        else:
+            print('WRONG NUMBER OF MODEL')
+            
         learning_end = time.time()
         print('LEARNING TIME')
         print(learning_end - learning_start)
