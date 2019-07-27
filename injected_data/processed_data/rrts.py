@@ -517,7 +517,7 @@ if __name__ == '__main__':
     args = sys.argv[0]
     
     #leggo il dataset con i dati delle esecuzioni
-    data = pd.read_csv('commons_compress_result.csv', header = 0)
+    data = pd.read_csv('commons_codec_result.csv', header = 0)
     #data = pd.read_csv('commons_compress_result.csv', header = 0, nrows = 100)
     data = data.rename(index=str, columns={"A_priority":"A" , "A_priority_with_time":"A_WITH_TIME", "B_priority":"B", "B_priority_with_time":"B_WITH_TIME", "C_priority":"C", "C_priority_with_time":"C_WITH_TIME", "D_priority":"D" })
     #print(data)
@@ -706,10 +706,10 @@ if __name__ == '__main__':
     output_data.insert(len(output_data.columns), 'learning_time', learning_time[1:], allow_duplicates = True)
     #output_data.to_csv('summary/' + str(args) + '-summary.csv', index = False)
     
-    if not os.path.isfile('experiments_A_time/commons_compress_injected_summary.csv'):
-        output_data.to_csv('experiments_A_time/commons_compress_injected_summary.csv', index = False, header = True)
+    if not os.path.isfile('experiments_A_time/commons_codec_injected_summary.csv'):
+        output_data.to_csv('experiments_A_time/commons_codec_injected_summary.csv', index = False, header = True)
     else: # else it exists so append without writing the header
-        output_data.to_csv('experiments_A_time/commons_compress_injected_summary.csv',index = False, mode = 'a', header = False)
+        output_data.to_csv('experiments_A_time/commons_codec_injected_summary.csv',index = False, mode = 'a', header = False)
     
  
  
