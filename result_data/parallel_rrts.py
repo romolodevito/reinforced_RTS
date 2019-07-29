@@ -545,6 +545,11 @@ def prediction(Xtest, model):
     return(action, action_p)
 
 
+def most_frequent(List): 
+    return max(set(List), key = List.count) 
+ 
+def average(lst): 
+    return sum(lst) / len(lst)  
 
 if __name__ == '__main__':
     args = sys.argv[0]
@@ -597,34 +602,75 @@ if __name__ == '__main__':
                 prediction_with_param = partial(prediction, data_subset.drop(['test_class_name', 'cycle_id', 'current_failures', 'time'], axis = 'columns'))
                 prediction_pool = ThreadPool(NUMBER_OF_MODELS)
                 result = prediction_pool.map(prediction_with_param, agent.model) 
-                print(result)
-                #print(action_p)
-                # close the pool and wait for the work to finish 
                 prediction_pool.close() 
                 prediction_pool.join()
+                
+                prediction_end = time.time()
+                print('PREDICTION TIME')
+                print(prediction_end - prediction_start)
+                prediction_time.append(prediction_end - prediction_start)
+                
+                print(result)
+                print('#############')
+                
+                
+                #concatenare i risultati dei thread
+                action = []
+                for i in range(0, len(result[0][0])):
+                    temp_class_array = []
+                    for j in range(0, NUMBER_OF_MODELS):
+                        temp = result[j][0]
+                        temp_class_array.append(temp[i])
+                    frequency = most_frequent(temp_class_array)
+                    print(temp_class_array)
+                    action.append(frequency) 
+                print(action) 
+                
+                
+                print("PROBABILITY")
+                priority_p_array = []
+                for i in range(0, len(result[0][0])):
+                    temp_prob_array = []
+                    for j in range(0, NUMBER_OF_MODELS):
+                        temp_prob = result[j][1]
+                        #temp = result[j][0]
+                        temp_prob_array.append(temp_prob[i][int(action[i])])
+                    prob = average(temp_prob_array) #inserire funzione che combina le probabilità
+                    print(temp_prob_array)
+                    priority_p_array.append(prob) 
+                print(priority_p_array)
+            
+                #print(action_p)
+                # close the pool and wait for the work to finish 
+                
             elif NUMBER_OF_MODELS == 1:
                 (action, action_p) = agent.get_action(data_subset.drop(['test_class_name', 'cycle_id', 'current_failures', 'time'], axis = 'columns'))
+                
+                prediction_end = time.time()
+                print('PREDICTION TIME')
+                print(prediction_end - prediction_start)
+                prediction_time.append(prediction_end - prediction_start)
+                #print(action)
+                #creo dataframe con le probabilità delle azioni
+                action_p = pd.DataFrame(action_p, columns = agent.model[0].classes_)
+                #print(agent.model.classes_)
+            
+                #gestione della priorità
+                priority_p_array = []
+                for j in range(0, len(action)):
+                    priority_p_array.append(action_p.iloc[j][action[j]])
+                #print(priority_p_array)
+            
             else:
                 print('WRONG NUMBER OF MODEL')
             
-            prediction_end = time.time()
-            print('PREDICTION TIME')
-            print(prediction_end - prediction_start)
-            prediction_time.append(prediction_end - prediction_start)
-            #print(action)
-            #creo dataframe con le probabilità delle azioni
-            action_p = pd.DataFrame(action_p, columns = agent.model[0].classes_)
-            #print(agent.model.classes_)
             
-            #gestione della priorità
-            priority_p_array = []
-            for j in range(0, len(action)):
-                priority_p_array.append(action_p.iloc[j][action[j]])
-            #print(priority_p_array)
-                
             #stampo l'accuracy per commit
-            score = agent.model.score(data_subset.drop(['test_class_name', 'cycle_id', 'current_failures', 'time'], axis = 'columns'), labels.loc[labels['cycle_id'] == commit_id][REWARD_SELECTOR]) 
-            print("Test score: {0:.2f} %".format(100 * score))
+            for i in range(0, NUMBER_OF_MODELS):
+                # Calculate the accuracy score and predict target values
+                score = agent.model[i].score(data_subset.drop(['test_class_name', 'cycle_id', 'current_failures', 'time'], axis = 'columns'), labels.loc[labels['cycle_id'] == commit_id][REWARD_SELECTOR]) 
+                print("Test score: {0:.2f} %".format(100 * score))
+                
             #print('LABELS')
             #print(labels.loc[labels['cycle_id'] == commit_id][REWARD_SELECTOR])
             #inserisco la colonna delle probabilità delle classi (priority_p)
@@ -765,10 +811,10 @@ if __name__ == '__main__':
     output_data.insert(len(output_data.columns), 'learning_time', learning_time[1:], allow_duplicates = True)
     #output_data.to_csv('summary/' + str(args) + '-summary.csv', index = False)
     
-    if not os.path.isfile('experiments/commons_lang_summary.csv'):
-        output_data.to_csv('experiments/commons_lang_summary.csv', index = False, header = True)
+    if not os.path.isfile('commons_lang_summary.csv'):
+        output_data.to_csv('commons_lang_summary.csv', index = False, header = True)
     else: # else it exists so append without writing the header
-        output_data.to_csv('experiments/commons_lang_summary.csv',index = False, mode = 'a', header = False)
+        output_data.to_csv('commons_lang_summary.csv',index = False, mode = 'a', header = False)
     
  
  
