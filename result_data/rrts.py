@@ -16,6 +16,7 @@ import time
 from datetime import datetime
 from sklearn import neural_network
 from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
 try:
 	import cPickle as pickle
 except:
@@ -26,7 +27,7 @@ except:
 HIDDEN_LAYER_SIZES = 12
 #REWARD_SELECTOR è utilizzato per selezionare la tipologia di reward desiderata, le scelte sono:
 # A, A_WITH_TIME, B, B_WITH_TIME, C, C_WITH_TIME, D
-REWARD_SELECTOR = 'D'
+REWARD_SELECTOR = 'A_WITH_TIME'
 #soglia temporale 
 TIME_THRESHOLD = 0.006999999999999999
 #dimensione della memoria utilizzata per il salvataggio dell'esperienza
@@ -518,7 +519,7 @@ if __name__ == '__main__':
     
     #leggo il dataset con i dati delle esecuzioni
     data = pd.read_csv('commons_lang_result.csv', header = 0)
-    #data = pd.read_csv('commons_compress_result.csv', header = 0, nrows = 100)
+    #data = pd.read_csv('commons_lang_result.csv', header = 0, nrows = 100)
     data = data.rename(index=str, columns={"A_priority":"A" , "A_priority_with_time":"A_WITH_TIME", "B_priority":"B", "B_priority_with_time":"B_WITH_TIME", "C_priority":"C", "C_priority_with_time":"C_WITH_TIME", "D_priority":"D" })
     #print(data)
     labels = data[['cycle_id',REWARD_SELECTOR]]
@@ -542,6 +543,7 @@ if __name__ == '__main__':
     #print(cycle_id_list)
     
     #dataset dei risultati finali
+    prediction_arry = []
     output_data = pd.DataFrame()
     prediction_time = []
     learning_time = []
@@ -559,11 +561,14 @@ if __name__ == '__main__':
             #prendo il tempo della predizione
             prediction_start = time.time()
             (action, action_p) = agent.get_action(data_subset.drop(['test_class_name', 'cycle_id', 'current_failures', 'time'], axis = 'columns'))
-            prediction_end = time.time()
+            prediction_end = time.time()  
             print('PREDICTION TIME')
             print(prediction_end - prediction_start)
             prediction_time.append(prediction_end - prediction_start)
             #print(action)
+            #lista di predizioni utilizzata per calcolare precision e recall
+            for elem in action:
+                prediction_arry.append(elem)
             #creo dataframe con le probabilità delle azioni
             action_p = pd.DataFrame(action_p, columns = agent.model.classes_)
             #print(agent.model.classes_)
@@ -577,6 +582,15 @@ if __name__ == '__main__':
             #stampo l'accuracy per commit
             score = agent.model.score(data_subset.drop(['test_class_name', 'cycle_id', 'current_failures', 'time'], axis = 'columns'), labels.loc[labels['cycle_id'] == commit_id][REWARD_SELECTOR]) 
             print("Test score: {0:.2f} %".format(100 * score))
+            
+            #classification report
+            #print(classification_report(labels.loc[labels['cycle_id'] == commit_id][REWARD_SELECTOR], action))
+            #confusion matrix
+            #cm = confusion_matrix(labels.loc[labels['cycle_id'] == commit_id][REWARD_SELECTOR], action)
+            #print(cm)
+            #confusion_matrix = pd.crosstab(labels.loc[labels['cycle_id'] == commit_id][REWARD_SELECTOR], action, rownames=['True'], colnames=['Predicted'], margins=True)
+            #print(confusion_matrix)
+            
             #print('LABELS')
             #print(labels.loc[labels['cycle_id'] == commit_id][REWARD_SELECTOR])
             #inserisco la colonna delle probabilità delle classi (priority_p)
@@ -607,14 +621,17 @@ if __name__ == '__main__':
             time_array = []
             class_array = []
             failures_array = []
+            failures_percenteage_array = []
             for j in range(0, len(data_subset)):
                 time_array.append(data_subset.iloc[j]['time'])
                 class_array.append(data_subset.iloc[j]['reward'])
                 failures_array.append(data_subset.iloc[j]['current_failures'])
+                failures_percenteage_array.append(data_subset.iloc[j]['failures_%'])
             
             evaluation.insert(len(evaluation.columns), 'time', time_array, allow_duplicates = True)
             evaluation.insert(len(evaluation.columns), 'class', class_array, allow_duplicates = True)
             evaluation.insert(len(evaluation.columns), 'failures', failures_array, allow_duplicates = True)
+            evaluation.insert(len(evaluation.columns), 'failures_percenteage', failures_percenteage_array, allow_duplicates = True)
             #print(data_subset.iloc[:,-5:])
             
             #ordino sul tempo e sulla classe
@@ -649,7 +666,7 @@ if __name__ == '__main__':
             
             
             #metriche per ciclo
-            output_data_temp = pd.DataFrame({"cycle_id":[commit_id], "num_testsuite":[len(data_subset)], "NORMALIZED_FPA":[estimated_fpa / optimal_fpa], "accuracy":[score], "total_failures_in_cycle":[evaluation['failures'].sum()], "exec_time":[evaluation['time'].sum()], "optimal_failures_25%":[optimal_failures_25], "failures_in_25%_ordered":[evaluation['failures'].head(int(len(data_subset)/4)).sum()], "optimal_exec_time_25%":[optimal_exec_time_25], "exec_time_25%":[evaluation['time'].head(int(len(data_subset)/4)).sum()], "optimal_failures_50%":[optimal_failures_50], "failures_in_50%_ordered":[evaluation['failures'].head(int((len(data_subset)/4)*2)).sum()], "optimal_exec_time_50%":[optimal_exec_time_50],"exec_time_50%":[evaluation['time'].head(int((len(data_subset)/4)*2)).sum()], "optimal_failures_75%":[optimal_failures_75], "failures_in_75%_ordered":[evaluation['failures'].head(int((len(data_subset)/4)*3)).sum()], "optimal_exec_time_75%":[optimal_exec_time_75], "exec_time_75%":[evaluation['time'].head(int((len(data_subset)/4)*3)).sum()]})
+            output_data_temp = pd.DataFrame({"cycle_id":[commit_id], "num_testsuite":[len(data_subset)], "NORMALIZED_FPA":[estimated_fpa / optimal_fpa], "accuracy":[score], "total_failures_in_cycle":[evaluation['failures'].sum()], "exec_time":[evaluation['time'].sum()], "optimal_failures_25%":[optimal_failures_25], "failures_in_25%_ordered":[evaluation['failures'].head(int(len(data_subset)/4)).sum()], "optimal_exec_time_25%":[optimal_exec_time_25], "exec_time_25%":[evaluation['time'].head(int(len(data_subset)/4)).sum()], "optimal_failures_50%":[optimal_failures_50], "failures_in_50%_ordered":[evaluation['failures'].head(int((len(data_subset)/4)*2)).sum()], "optimal_exec_time_50%":[optimal_exec_time_50],"exec_time_50%":[evaluation['time'].head(int((len(data_subset)/4)*2)).sum()], "optimal_failures_75%":[optimal_failures_75], "failures_in_75%_ordered":[evaluation['failures'].head(int((len(data_subset)/4)*3)).sum()], "optimal_exec_time_75%":[optimal_exec_time_75], "exec_time_75%":[evaluation['time'].head(int((len(data_subset)/4)*3)).sum()], "current_failures":[list(evaluation['failures'])], "failures_percenteage":[list(evaluation['failures_percenteage'])], "time":[list(evaluation['time'])], "ranking":[list(evaluation['ranking'])]})
             output_data = output_data.append(output_data_temp)
             ####################################################################################################################################################
             
@@ -701,6 +718,13 @@ if __name__ == '__main__':
    
     print('SUMMARY GENERATED')
     #print(output_data)
+    
+
+    #classification report
+    classification_report = classification_report(labels[len(labels.loc[labels['cycle_id'] == data.iloc[0]['cycle_id']][REWARD_SELECTOR]):][REWARD_SELECTOR], prediction_arry, output_dict=True)
+    #print(classification_report)
+    df = pd.DataFrame(classification_report).transpose()
+    df.to_csv('classification_report.csv', index = True, header = True)
     #dataset di uscita
     output_data.insert(len(output_data.columns), 'prediction_time', prediction_time, allow_duplicates = True)
     output_data.insert(len(output_data.columns), 'learning_time', learning_time[1:], allow_duplicates = True)

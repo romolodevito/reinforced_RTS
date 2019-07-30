@@ -116,6 +116,13 @@ class DQN_agent(object):
     
     def model_fitting(self, Xtrain, Ytrain):
         self.model.fit(Xtrain, Ytrain)
+        #if self.already_fitted_model:
+        #    try:
+        #        self.model.partial_fit(Xtrain, Ytrain)
+        #    except ValueError:
+        #        self.model.fit(Xtrain, Ytrain)
+        #else:
+        #    self.model.fit(Xtrain, Ytrain)
         
     def get_action(self, state):
         action = self.model.predict(np.array(state))
@@ -633,7 +640,6 @@ if __name__ == '__main__':
                     temp_prob_array = []
                     for j in range(0, NUMBER_OF_MODELS):
                         temp_prob = result[j][1]
-                        #temp = result[j][0]
                         temp_prob_array.append(temp_prob[i][int(action[i])])
                     prob = average(temp_prob_array) #inserire funzione che combina le probabilità
                     print(temp_prob_array)
@@ -642,6 +648,12 @@ if __name__ == '__main__':
             
                 #print(action_p)
                 # close the pool and wait for the work to finish 
+                
+                #stampo l'accuracy per commit
+                for i in range(0, NUMBER_OF_MODELS):
+                    # Calculate the accuracy score and predict target values
+                    score = agent.model[i].score(data_subset.drop(['test_class_name', 'cycle_id', 'current_failures', 'time'], axis = 'columns'), labels.loc[labels['cycle_id'] == commit_id][REWARD_SELECTOR]) 
+                    print("Test score: {0:.2f} %".format(100 * score))
                 
             elif NUMBER_OF_MODELS == 1:
                 (action, action_p) = agent.get_action(data_subset.drop(['test_class_name', 'cycle_id', 'current_failures', 'time'], axis = 'columns'))
@@ -652,7 +664,7 @@ if __name__ == '__main__':
                 prediction_time.append(prediction_end - prediction_start)
                 #print(action)
                 #creo dataframe con le probabilità delle azioni
-                action_p = pd.DataFrame(action_p, columns = agent.model[0].classes_)
+                action_p = pd.DataFrame(action_p, columns = agent.model.classes_)
                 #print(agent.model.classes_)
             
                 #gestione della priorità
@@ -660,17 +672,15 @@ if __name__ == '__main__':
                 for j in range(0, len(action)):
                     priority_p_array.append(action_p.iloc[j][action[j]])
                 #print(priority_p_array)
+                
+                score = agent.model.score(data_subset.drop(['test_class_name', 'cycle_id', 'current_failures', 'time'], axis = 'columns'), labels.loc[labels['cycle_id'] == commit_id][REWARD_SELECTOR]) 
+                print("Test score: {0:.2f} %".format(100 * score))
             
             else:
                 print('WRONG NUMBER OF MODEL')
             
             
-            #stampo l'accuracy per commit
-            for i in range(0, NUMBER_OF_MODELS):
-                # Calculate the accuracy score and predict target values
-                score = agent.model[i].score(data_subset.drop(['test_class_name', 'cycle_id', 'current_failures', 'time'], axis = 'columns'), labels.loc[labels['cycle_id'] == commit_id][REWARD_SELECTOR]) 
-                print("Test score: {0:.2f} %".format(100 * score))
-                
+            
             #print('LABELS')
             #print(labels.loc[labels['cycle_id'] == commit_id][REWARD_SELECTOR])
             #inserisco la colonna delle probabilità delle classi (priority_p)
