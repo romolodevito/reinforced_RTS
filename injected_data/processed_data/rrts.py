@@ -724,8 +724,8 @@ if __name__ == '__main__':
     #classification report
     classification_report = classification_report(labels[len(labels.loc[labels['cycle_id'] == data.iloc[0]['cycle_id']][REWARD_SELECTOR]):][REWARD_SELECTOR], prediction_arry, output_dict = True)
     #print(classification_report)
-    df = pd.DataFrame(classification_report).transpose()
-    df.to_csv('experiments_A_time/commons_lang_summary/classification_report.csv', index = True, mode = 'a', header = True)
+    classification_report_df = pd.DataFrame(classification_report).transpose()
+    #classification_report_df.to_csv('experiments_A_time/commons_lang_summary/classification_report.csv', index = True, mode = 'a', header = True)
     #dataset di uscita
     output_data.insert(len(output_data.columns), 'prediction_time', prediction_time, allow_duplicates = True)
     output_data.insert(len(output_data.columns), 'learning_time', learning_time[1:], allow_duplicates = True)
