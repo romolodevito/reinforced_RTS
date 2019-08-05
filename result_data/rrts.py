@@ -735,10 +735,10 @@ if __name__ == '__main__':
     if not os.path.exists('experiments_A_time_12_12_12_12'):
         os.makedirs('experiments_A_time_12_12_12_12')
     
-    if not os.path.isfile('experiments_A_time_12_12_12_12/' + args.replace('_result', '_injected_summary')):
-        output_data.to_csv('experiments_A_time_12_12_12_12/' + args.replace('_result', '_injected_summary'), index = False, header = True)
+    if not os.path.isfile('experiments_A_time_12_12_12_12/' + args.replace('_result', '_summary')):
+        output_data.to_csv('experiments_A_time_12_12_12_12/' + args.replace('_result', '_summary'), index = False, header = True)
     else: # else it exists so append without writing the header
-        output_data.to_csv('experiments_A_time_12_12_12_12/' + args.replace('_result', '_injected_summary'),index = False, mode = 'a', header = False)
+        output_data.to_csv('experiments_A_time_12_12_12_12/' + args.replace('_result', '_summary'),index = False, mode = 'a', header = False)
     
  
  
