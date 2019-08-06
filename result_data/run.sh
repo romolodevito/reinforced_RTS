@@ -1,5 +1,5 @@
 #!/bin/bash
-for i in `seq 1 10`;
+for i in `seq 1 2`;
 do
-    python3 rrts.py commons_codec_result.csv
+    python3 rrts.py commons_math_result.csv
 done    
