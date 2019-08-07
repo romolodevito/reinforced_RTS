@@ -31,9 +31,9 @@ REWARD_SELECTOR = 'A_WITH_TIME'
 #soglia temporale 
 TIME_THRESHOLD = 0.006999999999999999
 #dimensione della memoria utilizzata per il salvataggio dell'esperienza
-MEMORY_SIZE = 500
+MEMORY_SIZE = 2000
 #dimensione del batch utilizzato per l'apprendimento, il batch viene dato in ingresso alla rete per il training della stessa
-BATCH_SIZE = 500
+BATCH_SIZE = 2000
    
 #La classe experience_replay è utilizzata per salvare l'esperienza. L'esperienza consiste nella tupla (stato, reward).
 class experience_replay(object):
@@ -737,10 +737,10 @@ if __name__ == '__main__':
     if not os.path.exists('history_sensitivity_analysis/4_layer'):
         os.makedirs('history_sensitivity_analysis/4_layer')
     
-    if not os.path.isfile('history_sensitivity_analysis/4_layer/' + '500' + args.replace('_result', '_injected_summary')):
-        output_data.to_csv('history_sensitivity_analysis/4_layer/' + '500' + args.replace('_result', '_injected_summary'), index = False, header = True)
+    if not os.path.isfile('history_sensitivity_analysis/4_layer/' + '2000' + args.replace('_result', '_injected_summary')):
+        output_data.to_csv('history_sensitivity_analysis/4_layer/' + '2000' + args.replace('_result', '_injected_summary'), index = False, header = True)
     else: # else it exists so append without writing the header
-        output_data.to_csv('history_sensitivity_analysis/4_layer/' + '500' + args.replace('_result', '_injected_summary'),index = False, mode = 'a', header = False)
+        output_data.to_csv('history_sensitivity_analysis/4_layer/' + '2000' + args.replace('_result', '_injected_summary'),index = False, mode = 'a', header = False)
     
  
  
