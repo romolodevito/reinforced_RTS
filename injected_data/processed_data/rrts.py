@@ -31,9 +31,9 @@ REWARD_SELECTOR = 'A_WITH_TIME'
 #soglia temporale 
 TIME_THRESHOLD = 0.006999999999999999
 #dimensione della memoria utilizzata per il salvataggio dell'esperienza
-MEMORY_SIZE = 2000
+MEMORY_SIZE = 500
 #dimensione del batch utilizzato per l'apprendimento, il batch viene dato in ingresso alla rete per il training della stessa
-BATCH_SIZE = 2000
+BATCH_SIZE = 500
    
 #La classe experience_replay è utilizzata per salvare l'esperienza. L'esperienza consiste nella tupla (stato, reward).
 class experience_replay(object):
@@ -517,7 +517,8 @@ def FPA_generator(evaluation):
 if __name__ == '__main__':
     #args[0] nome del file da processare
     args = sys.argv[1]
-    
+    print('\nDATASET')
+    print(args + '\n')
     #leggo il dataset con i dati delle esecuzioni
     data = pd.read_csv(args, header = 0)
     #data = pd.read_csv('commons_lang_result.csv', header = 0, nrows = 100)
@@ -531,7 +532,7 @@ if __name__ == '__main__':
     
     #istanziazione agente
     agent = DQN_agent(HIDDEN_LAYER_SIZES, 'relu', False, 'adam')
-    
+    print(agent.model)
     #istanziazione memoria utilizzata per il salvataggio dell'esperienza
     mem = experience_replay(MEMORY_SIZE)
     
@@ -699,7 +700,8 @@ if __name__ == '__main__':
         #vado a campionare un batch di esperienza che sarà utilizzato per  addestrare la rete
         #print('\nGET_BATCH\n')
         batch = mem.get_batch(BATCH_SIZE) 
-        #print(batch)
+        print('BATCH_SIZE')
+        print(len(batch))
         batch_dataset = pd.DataFrame(batch, columns = data_subset.columns)
         #calcolo la mediana del ciclo corrente, verrà utilizzata nel ciclo successivo per calcolare la reward
         median = batch_dataset['time'].median()
@@ -732,13 +734,13 @@ if __name__ == '__main__':
     #output_data.to_csv('summary/' + str(args) + '-summary.csv', index = False)
     
     
-    if not os.path.exists('experiments_A_time_12_12_12_12'):
-        os.makedirs('experiments_A_time_12_12_12_12')
+    if not os.path.exists('history_sensitivity_analysis/4_layer'):
+        os.makedirs('history_sensitivity_analysis/4_layer')
     
-    if not os.path.isfile('experiments_A_time_12_12_12_12/' + args.replace('_result', '_injected_summary')):
-        output_data.to_csv('experiments_A_time_12_12_12_12/' + args.replace('_result', '_injected_summary'), index = False, header = True)
+    if not os.path.isfile('history_sensitivity_analysis/4_layer/' + '500' + args.replace('_result', '_injected_summary')):
+        output_data.to_csv('history_sensitivity_analysis/4_layer/' + '500' + args.replace('_result', '_injected_summary'), index = False, header = True)
     else: # else it exists so append without writing the header
-        output_data.to_csv('experiments_A_time_12_12_12_12/' + args.replace('_result', '_injected_summary'),index = False, mode = 'a', header = False)
+        output_data.to_csv('history_sensitivity_analysis/4_layer/' + '500' + args.replace('_result', '_injected_summary'),index = False, mode = 'a', header = False)
     
  
  
