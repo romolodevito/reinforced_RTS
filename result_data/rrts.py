@@ -24,7 +24,7 @@ except:
 
 
 #dimensione dell'i-esimo layer della rete, aumentando la lista delle dimensioni (e.g. 32,16,8,...) è possibile istanziare una rete con più layer
-HIDDEN_LAYER_SIZES = 12,12,12,12
+HIDDEN_LAYER_SIZES = 12
 #REWARD_SELECTOR è utilizzato per selezionare la tipologia di reward desiderata, le scelte sono:
 # A, A_WITH_TIME, B, B_WITH_TIME, C, C_WITH_TIME, D
 REWARD_SELECTOR = 'A_WITH_TIME'
@@ -648,18 +648,26 @@ if __name__ == '__main__':
             print('OPTIMAL_FPA')
             optimal_fpa = FPA_generator(evaluation)
             print(optimal_fpa)
-            #Calcolo tempo di esecuzione prima dell'ordinamento
-            optimal_exec_time_25 = evaluation['time'].head(int(len(data_subset)/4)).sum()
-            optimal_exec_time_50 = evaluation['time'].head(int((len(data_subset)/4)*2)).sum()
-            optimal_exec_time_75 = evaluation['time'].head(int((len(data_subset)/4)*3)).sum()
-            optimal_failures_25 = evaluation['failures'].head(int(len(data_subset)/4)).sum()
-            optimal_failures_50 = evaluation['failures'].head(int((len(data_subset)/4)*2)).sum()
-            optimal_failures_75 = evaluation['failures'].head(int((len(data_subset)/4)*3)).sum()
+            #Calcolo tempo di esecuzione e fallimenti prima dell'ordinamento
+            optimal_exec_time_25 = evaluation['time'].head(max(int(len(data_subset)/4), 1)).sum()
+            optimal_exec_time_50 = evaluation['time'].head(max(int(len(data_subset)/4), 1)*2).sum()
+            optimal_exec_time_75 = evaluation['time'].head(max(int(len(data_subset)/4), 1)*3).sum()
+            optimal_failures_25 = evaluation['failures'].head(max(int(len(data_subset)/4), 1)).sum()
+            optimal_failures_50 = evaluation['failures'].head(max(int(len(data_subset)/4), 1)*2).sum()
+            optimal_failures_75 = evaluation['failures'].head(max(int(len(data_subset)/4), 1)*3).sum()
             
             
             #ordino su priority_p e priority
             evaluation = evaluation.sort_values(by = ['priority', 'priority_p'], ascending = [False, False])
             #print(evaluation)
+            
+            #Calcolo tempo di esecuzione e fallimenti dopo l'ordinamento
+            exec_time_25 = evaluation['time'].head(max(int(len(data_subset)/4), 1)).sum()
+            exec_time_50 = evaluation['time'].head(max(int(len(data_subset)/4), 1)*2).sum()
+            exec_time_75 = evaluation['time'].head(max(int(len(data_subset)/4), 1)*3).sum()
+            failures_in_25_ordered = evaluation['failures'].head(max(int(len(data_subset)/4), 1)).sum()
+            failures_in_50_ordered = evaluation['failures'].head(max(int(len(data_subset)/4), 1)*2).sum()
+            failures_in_75_ordered = evaluation['failures'].head(max(int(len(data_subset)/4), 1)*3).sum()
             
             #ESTIMATED FAILURE PERCENTILE ACCURACY (FPA) AFTER RANKING 
             print('ESTIMATED_FPA')   
@@ -668,7 +676,7 @@ if __name__ == '__main__':
             
             
             #metriche per ciclo
-            output_data_temp = pd.DataFrame({"cycle_id":[commit_id], "num_testsuite":[len(data_subset)], "NORMALIZED_FPA":[estimated_fpa / optimal_fpa], "accuracy":[score], "total_failures_in_cycle":[evaluation['failures'].sum()], "exec_time":[evaluation['time'].sum()], "optimal_failures_25%":[optimal_failures_25], "failures_in_25%_ordered":[evaluation['failures'].head(int(len(data_subset)/4)).sum()], "optimal_exec_time_25%":[optimal_exec_time_25], "exec_time_25%":[evaluation['time'].head(int(len(data_subset)/4)).sum()], "optimal_failures_50%":[optimal_failures_50], "failures_in_50%_ordered":[evaluation['failures'].head(int((len(data_subset)/4)*2)).sum()], "optimal_exec_time_50%":[optimal_exec_time_50],"exec_time_50%":[evaluation['time'].head(int((len(data_subset)/4)*2)).sum()], "optimal_failures_75%":[optimal_failures_75], "failures_in_75%_ordered":[evaluation['failures'].head(int((len(data_subset)/4)*3)).sum()], "optimal_exec_time_75%":[optimal_exec_time_75], "exec_time_75%":[evaluation['time'].head(int((len(data_subset)/4)*3)).sum()]})
+            output_data_temp = pd.DataFrame({"cycle_id":[commit_id], "num_testsuite":[len(data_subset)], "NORMALIZED_FPA":[estimated_fpa / optimal_fpa], "accuracy":[score], "total_failures_in_cycle":[evaluation['failures'].sum()], "exec_time":[evaluation['time'].sum()], "optimal_failures_25%":[optimal_failures_25], "failures_in_25%_ordered":[failures_in_25_ordered], "optimal_exec_time_25%":[optimal_exec_time_25], "exec_time_25%":[exec_time_25], "optimal_failures_50%":[optimal_failures_50], "failures_in_50%_ordered":[failures_in_50_ordered], "optimal_exec_time_50%":[optimal_exec_time_50],"exec_time_50%":[exec_time_50], "optimal_failures_75%":[optimal_failures_75], "failures_in_75%_ordered":[failures_in_75_ordered], "optimal_exec_time_75%":[optimal_exec_time_75], "exec_time_75%":[exec_time_75]})
             output_data = output_data.append(output_data_temp)
             ####################################################################################################################################################
             
@@ -734,13 +742,25 @@ if __name__ == '__main__':
     #output_data.to_csv('summary/' + str(args) + '-summary.csv', index = False)
     
     
-    if not os.path.exists('history_sensitivity_analysis/4_layer'):
-        os.makedirs('history_sensitivity_analysis/4_layer')
     
-    if not os.path.isfile('history_sensitivity_analysis/4_layer/' + str(BATCH_SIZE) + args.replace('_result', '_summary')):
-        output_data.to_csv('history_sensitivity_analysis/4_layer/' + str(BATCH_SIZE) + args.replace('_result', '_summary'), index = False, header = True)
+    if not os.path.exists('experiments_A_time_12'):
+        os.makedirs('experiments_A_time_12')
+    
+    if not os.path.isfile('experiments_A_time_12' + args.replace('_result', '_summary')):
+        output_data.to_csv('experiments_A_time_12' + args.replace('_result', '_summary'), index = False, header = True)
     else: # else it exists so append without writing the header
-        output_data.to_csv('history_sensitivity_analysis/4_layer/' + str(BATCH_SIZE) + args.replace('_result', '_summary'),index = False, mode = 'a', header = False)
+        output_data.to_csv('experiments_A_time_12' + args.replace('_result', '_summary'),index = False, mode = 'a', header = False)
+    
+    
+    
+    
+    #if not os.path.exists('history_sensitivity_analysis/4_layer'):
+    #    os.makedirs('history_sensitivity_analysis/4_layer')
+    
+    #if not os.path.isfile('history_sensitivity_analysis/4_layer/' + str(BATCH_SIZE) + args.replace('_result', '_summary')):
+    #    output_data.to_csv('history_sensitivity_analysis/4_layer/' + str(BATCH_SIZE) + args.replace('_result', '_summary'), index = False, header = True)
+    #else: # else it exists so append without writing the header
+    #    output_data.to_csv('history_sensitivity_analysis/4_layer/' + str(BATCH_SIZE) + args.replace('_result', '_summary'),index = False, mode = 'a', header = False)
     
  
  
