@@ -743,13 +743,13 @@ if __name__ == '__main__':
     
     
     
-    if not os.path.exists('4class_experiments/4_layer'):
-        os.makedirs('4class_experiments/4_layer')
+    if not os.path.exists('history_sensitivity_analysis/4_layer'):
+        os.makedirs('history_sensitivity_analysis/4_layer')
     
-    if not os.path.isfile('4class_experiments/4_layer/' + args.replace('_result', '_summary')):
-        output_data.to_csv('4class_experiments/4_layer/' + args.replace('_result', '_summary'), index = False, header = True)
+    if not os.path.isfile('history_sensitivity_analysis/4_layer/' + str(BATCH_SIZE) + args.replace('_result', '_summary')):
+        output_data.to_csv('history_sensitivity_analysis/4_layer/' + str(BATCH_SIZE) + args.replace('_result', '_summary'), index = False, header = True)
     else: # else it exists so append without writing the header
-        output_data.to_csv('4class_experiments/4_layer/' + args.replace('_result', '_summary'),index = False, mode = 'a', header = False)
+        output_data.to_csv('history_sensitivity_analysis/4_layer/' + str(BATCH_SIZE) + args.replace('_result', '_summary'),index = False, mode = 'a', header = False)
     
     
     
