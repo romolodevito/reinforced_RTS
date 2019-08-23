@@ -24,7 +24,7 @@ except:
 
 
 #dimensione dell'i-esimo layer della rete, aumentando la lista delle dimensioni (e.g. 32,16,8,...) è possibile istanziare una rete con più layer
-HIDDEN_LAYER_SIZES = 12,12,12,12
+HIDDEN_LAYER_SIZES = 12
 #REWARD_SELECTOR è utilizzato per selezionare la tipologia di reward desiderata, le scelte sono:
 # A, A_WITH_TIME, B, B_WITH_TIME, C, C_WITH_TIME, D
 REWARD_SELECTOR = 'A_WITH_TIME' #4 classi
@@ -743,13 +743,13 @@ if __name__ == '__main__':
     
     
     
-    if not os.path.exists('history_sensitivity_analysis/4_layer'):
-        os.makedirs('history_sensitivity_analysis/4_layer')
+    if not os.path.exists('4class_experiments/1_layer'):
+        os.makedirs('4class_experiments/1_layer')
     
-    if not os.path.isfile('history_sensitivity_analysis/4_layer/' + str(BATCH_SIZE) + args.replace('_result', '_injected_summary')):
-        output_data.to_csv('history_sensitivity_analysis/4_layer/' + str(BATCH_SIZE) + args.replace('_result', '_injected_summary'), index = False, header = True)
+    if not os.path.isfile('4class_experiments/1_layer/' + args.replace('_result', '_injected_summary')):
+        output_data.to_csv('4class_experiments/1_layer/' + args.replace('_result', '_injected_summary'), index = False, header = True)
     else: # else it exists so append without writing the header
-        output_data.to_csv('history_sensitivity_analysis/4_layer/' + str(BATCH_SIZE) + args.replace('_result', '_injected_summary'),index = False, mode = 'a', header = False)
+        output_data.to_csv('4class_experiments/1_layer/' + args.replace('_result', '_injected_summary'),index = False, mode = 'a', header = False)
     
     
     
